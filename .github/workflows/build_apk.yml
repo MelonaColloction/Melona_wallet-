@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -27,7 +27,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Android project
+      - name: Generate Android project
         run: |
           if [ ! -d "android" ]; then
             flutter create \
@@ -40,7 +40,7 @@ jobs:
 
           rm -f test/widget_test.dart
 
-      - name: Get dependencies
+      - name: Pub Get
         run: flutter pub get
 
       - name: Analyze
