@@ -27,15 +27,18 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter Android project files
+      - name: Create Android project
         run: |
           if [ ! -d "android" ]; then
             flutter create \
               --org com.melona \
               --project-name melona_wallet \
               --platforms android \
+              --no-pub \
               .
           fi
+
+          rm -f test/widget_test.dart
 
       - name: Get dependencies
         run: flutter pub get
@@ -43,7 +46,7 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Build release APK
+      - name: Build APK
         run: flutter build apk --release
 
       - name: Upload APK
