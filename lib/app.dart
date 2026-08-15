@@ -1,366 +1,732 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'wallet_service.dart';
+import 'blockchain_service.dart';
 
-class MelonaWalletApp extends StatefulWidget {
+const Color melonaGreen = Color(0xFF7BE56B);
+
+class MelonaWalletApp extends StatelessWidget {
   const MelonaWalletApp({super.key});
-
-  @override
-  State<MelonaWalletApp> createState() => _MelonaWalletAppState();
-}
-
-class _MelonaWalletAppState extends State<MelonaWalletApp> {
-  ThemeMode _themeMode = ThemeMode.dark;
-  String _language = 'en';
-
-  void _toggleTheme() {
-    setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    });
-  }
-
-  void _changeLanguage(String language) {
-    setState(() => _language = language);
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Melona Wallet',
-      themeMode: _themeMode,
-      theme: _lightTheme,
-      darkTheme: _darkTheme,
-      home: HomePage(
-        language: _language,
-        themeMode: _themeMode,
-        onThemeChanged: _toggleTheme,
-        onLanguageChanged: _changeLanguage,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: melonaGreen,
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF080C0A),
       ),
+      home: const WalletHomePage(),
     );
   }
 }
 
-const Color melonaGreen = Color(0xFF75D66A);
-const Color darkBackground = Color(0xFF0B0F0D);
-const Color darkCard = Color(0xFF141A17);
+class WalletHomePage extends StatefulWidget {
+  const WalletHomePage({super.key});
 
-ThemeData _darkTheme = ThemeData(
-  brightness: Brightness.dark,
-  scaffoldBackgroundColor: darkBackground,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: melonaGreen,
-    brightness: Brightness.dark,
-  ),
-  useMaterial3: true,
-  cardTheme: const CardThemeData(
-    color: darkCard,
-    elevation: 0,
-    margin: EdgeInsets.zero,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: darkCard,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-  ),
-);
+  @override
+  State<WalletHomePage> createState() => _WalletHomePageState();
+}
 
-ThemeData _lightTheme = ThemeData(
-  brightness: Brightness.light,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: melonaGreen,
-    brightness: Brightness.light,
-  ),
-  useMaterial3: true,
-  cardTheme: const CardThemeData(
-    elevation: 0,
-    margin: EdgeInsets.zero,
-  ),
-);
+class _WalletHomePageState extends State<WalletHomePage> {
+  final WalletService walletService = WalletService();
+  final BlockchainService blockchainService = BlockchainService();
 
-class HomePage extends StatelessWidget {
-  final String language;
-  final ThemeMode themeMode;
-  final VoidCallback onThemeChanged;
-  final ValueChanged<String> onLanguageChanged;
+  List<WalletInfo> wallets = [];
+  WalletInfo? selectedWallet;
 
-  const HomePage({
-    super.key,
-    required this.language,
-    required this.themeMode,
-    required this.onThemeChanged,
-    required this.onLanguageChanged,
-  });
+  ChainConfig selectedChain = BlockchainService.ethereumSepolia;
 
-  String t(String key) {
-    const translations = {
-      'en': {
-        'hello': 'Welcome to Melona',
-        'balance': 'Total Balance',
-        'assets': 'Your Assets',
-        'send': 'Send',
-        'receive': 'Receive',
-        'swap': 'Swap',
-        'wallet': 'Wallet',
-        'nft': 'NFT',
-        'settings': 'Settings',
-        'bitcoin': 'Bitcoin',
-        'ethereum': 'Ethereum',
-        'usdt': 'Tether USD',
-        'coming': 'Coming Soon',
-      },
-      'fa': {
-        'hello': 'به ملونا خوش آمدید',
-        'balance': 'موجودی کل',
-        'assets': 'دارایی‌های شما',
-        'send': 'ارسال',
-        'receive': 'دریافت',
-        'swap': 'سواپ',
-        'wallet': 'کیف پول',
-        'nft': 'NFT',
-        'settings': 'تنظیمات',
-        'bitcoin': 'بیت‌کوین',
-        'ethereum': 'اتریوم',
-        'usdt': 'تتر',
-        'coming': 'به‌زودی',
-      },
-      'fr': {
-        'hello': 'Bienvenue sur Melona',
-        'balance': 'Solde total',
-        'assets': 'Vos actifs',
-        'send': 'Envoyer',
-        'receive': 'Recevoir',
-        'swap': 'Swap',
-        'wallet': 'Portefeuille',
-        'nft': 'NFT',
-        'settings': 'Paramètres',
-        'bitcoin': 'Bitcoin',
-        'ethereum': 'Ethereum',
-        'usdt': 'Tether USD',
-        'coming': 'Bientôt',
-      },
-      'de': {
-        'hello': 'Willkommen bei Melona',
-        'balance': 'Gesamtguthaben',
-        'assets': 'Ihre Vermögenswerte',
-        'send': 'Senden',
-        'receive': 'Empfangen',
-        'swap': 'Swap',
-        'wallet': 'Wallet',
-        'nft': 'NFT',
-        'settings': 'Einstellungen',
-        'bitcoin': 'Bitcoin',
-        'ethereum': 'Ethereum',
-        'usdt': 'Tether USD',
-        'coming': 'Demnächst',
-      },
-      'zh': {
-        'hello': '欢迎使用 Melona',
-        'balance': '总余额',
-        'assets': '您的资产',
-        'send': '发送',
-        'receive': '接收',
-        'swap': '兑换',
-        'wallet': '钱包',
-        'nft': 'NFT',
-        'settings': '设置',
-        'bitcoin': '比特币',
-        'ethereum': '以太坊',
-        'usdt': '泰达币',
-        'coming': '即将推出',
-      },
-    };
+  bool loading = true;
+  String balance = '0';
 
-    return translations[language]?[key] ??
-        translations['en']![key] ??
-        key;
+  @override
+  void initState() {
+    super.initState();
+    _loadWallets();
   }
 
-  bool get isRtl => language == 'fa';
+  Future<void> _loadWallets() async {
+    final result = await walletService.getWallets();
+
+    if (!mounted) return;
+
+    setState(() {
+      wallets = result;
+      selectedWallet = result.isEmpty ? null : result.first;
+      loading = false;
+    });
+
+    if (selectedWallet != null) {
+      await _refreshBalance();
+    }
+  }
+
+  Future<void> _refreshBalance() async {
+    if (selectedWallet == null) return;
+
+    try {
+      final amount = await blockchainService.getNativeBalance(
+        chain: selectedChain,
+        address: selectedWallet!.address,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        balance = amount
+            .getValueInUnit(EtherUnit.ether)
+            .toStringAsFixed(6);
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        balance = '0';
+      });
+    }
+  }
+
+  Future<void> _createWallet() async {
+    final nameController = TextEditingController();
+
+    bool testnet = true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Create Wallet'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Wallet name',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SwitchListTile(
+                    value: testnet,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        testnet = value;
+                      });
+                    },
+                    title: const Text('Testnet'),
+                    subtitle: Text(
+                      testnet
+                          ? 'Safe for testing'
+                          : 'Real blockchain assets',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+
+                    if (name.isEmpty) {
+                      return;
+                    }
+
+                    final wallet = await walletService.createWallet(
+                      name: name,
+                      testnet: testnet,
+                    );
+
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context, true);
+
+                    await _showMnemonic(wallet);
+                  },
+                  child: const Text('Create'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      await _loadWallets();
+    }
+  }
+
+  Future<void> _importWallet() async {
+    final nameController = TextEditingController();
+    final phraseController = TextEditingController();
+
+    bool testnet = true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Import Wallet'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Wallet name',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: phraseController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Recovery phrase',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      value: testnet,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          testnet = value;
+                        });
+                      },
+                      title: const Text('Testnet'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      final wallet = await walletService.importWallet(
+                        name: nameController.text.trim(),
+                        mnemonic: phraseController.text,
+                        testnet: testnet,
+                      );
+
+                      if (!context.mounted) return;
+
+                      Navigator.pop(context, true);
+
+                      await _loadWallets();
+
+                      if (mounted) {
+                        await _showWallet(wallet);
+                      }
+                    } catch (_) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Invalid recovery phrase'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Import'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      await _loadWallets();
+    }
+  }
+
+  Future<void> _showMnemonic(WalletInfo wallet) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Backup your recovery phrase'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Write these words down offline. Never send them to anyone.',
+                ),
+                const SizedBox(height: 20),
+                SelectableText(
+                  wallet.mnemonic,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    height: 1.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('I saved it'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showWallet(WalletInfo wallet) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                wallet.name,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                wallet.testnet ? 'TESTNET' : 'MAINNET',
+                style: TextStyle(
+                  color: wallet.testnet ? melonaGreen : Colors.orange,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Address',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              SelectableText(wallet.address),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: wallet.address),
+                        );
+
+                        Navigator.pop(context);
+
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Address copied'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_rounded),
+                      label: const Text('Copy'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showReceive(wallet);
+                      },
+                      icon: const Icon(Icons.qr_code_rounded),
+                      label: const Text('Receive'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showMnemonic(wallet);
+                },
+                icon: const Icon(Icons.visibility_rounded),
+                label: const Text('Show recovery phrase'),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+
+                  await walletService.deleteWallet(wallet.id);
+
+                  await _loadWallets();
+                },
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Delete wallet'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showReceive(WalletInfo wallet) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Receive'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QrImageView(
+                data: wallet.address,
+                size: 220,
+              ),
+              const SizedBox(height: 16),
+              SelectableText(
+                wallet.address,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(
+                  ClipboardData(text: wallet.address),
+                );
+
+                Navigator.pop(context);
+              },
+              child: const Text('Copy'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendNative() async {
+    if (selectedWallet == null) return;
+
+    final addressController = TextEditingController();
+    final amountController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        bool sending = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Send ${selectedChain.symbol}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Recipient address',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: amountController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Amount',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      sending ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          final address =
+                              addressController.text.trim();
+
+                          final amount =
+                              double.tryParse(
+                            amountController.text.trim(),
+                          );
+
+                          if (amount == null || amount <= 0) {
+                            return;
+                          }
+
+                          setDialogState(() {
+                            sending = true;
+                          });
+
+                          try {
+                            final privateKey =
+                                await walletService.getPrivateKey(
+                              selectedWallet!.id,
+                            );
+
+                            if (privateKey == null) {
+                              throw Exception(
+                                'Private key unavailable',
+                              );
+                            }
+
+                            final wei = BigInt.from(
+                              amount *
+                                  1000000000000000000,
+                            );
+
+                            final hash =
+                                await blockchainService.sendNative(
+                              chain: selectedChain,
+                              privateKey: privateKey,
+                              to: address,
+                              amountWei: wei,
+                            );
+
+                            if (!context.mounted) return;
+
+                            Navigator.pop(context);
+
+                            ScaffoldMessenger.of(
+                              this.context,
+                            ).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Transaction sent: $hash',
+                                ),
+                              ),
+                            );
+
+                            await _refreshBalance();
+                          } catch (e) {
+                            setDialogState(() {
+                              sending = false;
+                            });
+
+                            if (!context.mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Transaction failed: $e',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  child: sending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text('Send'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: melonaGreen,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.account_balance_wallet_rounded,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          t('hello'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: onThemeChanged,
-                        icon: Icon(
-                          themeMode == ThemeMode.dark
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Melona',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'create') {
+                _createWallet();
+              } else if (value == 'import') {
+                _importWallet();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'create',
+                child: Text('Create wallet'),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                sliver: SliverToBoxAdapter(
-                  child: _BalanceCard(t: t),
-                ),
+              PopupMenuItem(
+                value: 'import',
+                child: Text('Import wallet'),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.arrow_upward_rounded,
-                          label: t('send'),
-                          onTap: () => _showComingSoon(context, t),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.arrow_downward_rounded,
-                          label: t('receive'),
-                          onTap: () => _showComingSoon(context, t),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.swap_vert_rounded,
-                          label: t('swap'),
-                          onTap: () => _showComingSoon(context, t),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            ],
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshBalance,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            if (selectedWallet == null)
+              _EmptyWalletCard(
+                onCreate: _createWallet,
+                onImport: _importWallet,
+              )
+            else ...[
+              _WalletCard(
+                wallet: selectedWallet!,
+                balance: balance,
+                chain: selectedChain,
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-                sliver: SliverToBoxAdapter(
-                  child: Text(
-                    t('assets'),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
+              const SizedBox(height: 16),
+              _ChainSelector(
+                selected: selectedChain,
+                onChanged: (chain) async {
+                  setState(() {
+                    selectedChain = chain;
+                  });
+
+                  await _refreshBalance();
+                },
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _AssetTile(
-                      icon: Icons.currency_bitcoin_rounded,
-                      name: t('bitcoin'),
-                      symbol: 'BTC',
-                      amount: '0.000000',
-                      value: '\$0.00',
-                      change: '+0.00%',
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.arrow_upward_rounded,
+                      title: 'Send',
+                      onTap: _sendNative,
                     ),
-                    const SizedBox(height: 10),
-                    _AssetTile(
-                      icon: Icons.currency_exchange_rounded,
-                      name: t('ethereum'),
-                      symbol: 'ETH',
-                      amount: '0.000000',
-                      value: '\$0.00',
-                      change: '+0.00%',
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.arrow_downward_rounded,
+                      title: 'Receive',
+                      onTap: () => _showReceive(selectedWallet!),
                     ),
-                    const SizedBox(height: 10),
-                    _AssetTile(
-                      icon: Icons.monetization_on_rounded,
-                      name: t('usdt'),
-                      symbol: 'USDT',
-                      amount: '0.00',
-                      value: '\$0.00',
-                      change: '0.00%',
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.swap_vert_rounded,
+                      title: 'Swap',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Swap engine will be connected next.',
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'My Wallets',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                sliver: SliverToBoxAdapter(
-                  child: _LanguageSelector(
-                    current: language,
-                    onChanged: onLanguageChanged,
+              const SizedBox(height: 10),
+              ...wallets.map(
+                (wallet) => Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: melonaGreen,
+                      child: Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.black,
+                      ),
+                    ),
+                    title: Text(wallet.name),
+                    subtitle: Text(
+                      '${wallet.address.substring(0, 8)}...'
+                      '${wallet.address.substring(wallet.address.length - 6)}',
+                    ),
+                    trailing: wallet.id == selectedWallet!.id
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: melonaGreen,
+                          )
+                        : null,
+                    onTap: () async {
+                      setState(() {
+                        selectedWallet = wallet;
+                      });
+
+                      await _refreshBalance();
+                    },
                   ),
                 ),
               ),
             ],
-          ),
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: 0,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.account_balance_wallet_rounded),
-              label: t('wallet'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.image_rounded),
-              label: t('nft'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.settings_rounded),
-              label: t('settings'),
-            ),
           ],
         ),
       ),
     );
   }
-
-  void _showComingSoon(BuildContext context, String Function(String) text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(text('coming')),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 }
 
-class _BalanceCard extends StatelessWidget {
-  final String Function(String) t;
+class _WalletCard extends StatelessWidget {
+  final WalletInfo wallet;
+  final String balance;
+  final ChainConfig chain;
 
-  const _BalanceCard({required this.t});
+  const _WalletCard({
+    required this.wallet,
+    required this.balance,
+    required this.chain,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -369,48 +735,65 @@ class _BalanceCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E2B23),
-            Color(0xFF111713),
+            Color(0xFF243D2A),
+            Color(0xFF101710),
           ],
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            t('balance'),
-            style: const TextStyle(color: Colors.white60),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '\$0.00',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 38,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
-              Icon(
-                Icons.trending_up_rounded,
-                size: 18,
-                color: melonaGreen,
+              const CircleAvatar(
+                backgroundColor: melonaGreen,
+                child: Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.black,
+                ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  wallet.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
               Text(
-                '0.00%',
+                wallet.testnet ? 'TESTNET' : 'MAINNET',
                 style: TextStyle(
-                  color: melonaGreen,
-                  fontWeight: FontWeight.w700,
+                  color: wallet.testnet
+                      ? melonaGreen
+                      : Colors.orange,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Balance',
+            style: TextStyle(color: Colors.white60),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '$balance ${chain.symbol}',
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            wallet.address,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -418,14 +801,59 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
+class _ChainSelector extends StatelessWidget {
+  final ChainConfig selected;
+  final ValueChanged<ChainConfig> onChanged;
+
+  const _ChainSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chains = [
+      BlockchainService.ethereumSepolia,
+      BlockchainService.bnbTestnet,
+      BlockchainService.polygonAmoy,
+      BlockchainService.baseSepolia,
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<ChainConfig>(
+            value: selected,
+            isExpanded: true,
+            items: chains
+                .map(
+                  (chain) => DropdownMenuItem(
+                    value: chain,
+                    child: Text(chain.name),
+                  ),
+                )
+                .toList(),
+            onChanged: (chain) {
+              if (chain != null) {
+                onChanged(chain);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ActionButton extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final String title;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
-    required this.label,
+    required this.title,
     required this.onTap,
   });
 
@@ -435,21 +863,23 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: const Color(0xFF141A16),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
-          ),
         ),
         child: Column(
           children: [
-            Icon(icon, color: melonaGreen),
-            const SizedBox(height: 6),
+            Icon(
+              icon,
+              color: melonaGreen,
+            ),
+            const SizedBox(height: 7),
             Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ],
         ),
@@ -458,122 +888,62 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _AssetTile extends StatelessWidget {
-  final IconData icon;
-  final String name;
-  final String symbol;
-  final String amount;
-  final String value;
-  final String change;
+class _EmptyWalletCard extends StatelessWidget {
+  final VoidCallback onCreate;
+  final VoidCallback onImport;
 
-  const _AssetTile({
-    required this.icon,
-    required this.name,
-    required this.symbol,
-    required this.amount,
-    required this.value,
-    required this.change,
+  const _EmptyWalletCard({
+    required this.onCreate,
+    required this.onImport,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFF141A16),
+        borderRadius: BorderRadius.circular(28),
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: melonaGreen.withValues(alpha: 0.12),
-            child: Icon(icon, color: melonaGreen),
+          const Icon(
+            Icons.account_balance_wallet_rounded,
+            size: 70,
+            color: melonaGreen,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '$amount $symbol',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+          const SizedBox(height: 20),
+          const Text(
+            'Welcome to Melona Wallet',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                change,
-                style: const TextStyle(
-                  color: melonaGreen,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          const SizedBox(height: 10),
+          const Text(
+            'Create a new wallet or import an existing one.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onCreate,
+              child: const Text('Create New Wallet'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onImport,
+              child: const Text('Import Wallet'),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _LanguageSelector extends StatelessWidget {
-  final String current;
-  final ValueChanged<String> onChanged;
-
-  const _LanguageSelector({
-    required this.current,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: current,
-      decoration: const InputDecoration(
-        labelText: 'Language',
-        prefixIcon: Icon(Icons.language_rounded),
-      ),
-      items: const [
-        DropdownMenuItem(
-          value: 'en',
-          child: Text('English'),
-        ),
-        DropdownMenuItem(
-          value: 'fa',
-          child: Text('فارسی'),
-        ),
-        DropdownMenuItem(
-          value: 'fr',
-          child: Text('Français'),
-        ),
-        DropdownMenuItem(
-          value: 'de',
-          child: Text('Deutsch'),
-        ),
-        DropdownMenuItem(
-          value: 'zh',
-          child: Text('简体中文'),
-        ),
-      ],
-      onChanged: (value) {
-        if (value != null) {
-          onChanged(value);
-        }
-      },
     );
   }
 }
