@@ -40,7 +40,7 @@ jobs:
 
           rm -f test/widget_test.dart
 
-      - name: Pub Get
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Analyze
