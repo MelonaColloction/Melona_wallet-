@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -27,20 +27,27 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Flutter Doctor
-        run: flutter doctor -v
+      - name: Create Flutter Android project files
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create \
+              --org com.melona \
+              --project-name melona_wallet \
+              --platforms android \
+              .
+          fi
 
-      - name: Get Dependencies
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Analyze
         run: flutter analyze
 
-      - name: Build APK
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MelonaWallet-release
+          name: MelonaWallet-APK
           path: build/app/outputs/flutter-apk/app-release.apk
