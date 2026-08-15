@@ -14,11 +14,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  flutter_secure_storage: ^10.3.1
-  bip39: ^1.0.6
-  wallet: ^0.0.18
   web3dart: ^3.0.3
   http: ^1.4.0
+  flutter_secure_storage: ^10.3.1
   qr_flutter: ^4.1.0
 
 dev_dependencies:
