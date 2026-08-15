@@ -16,35 +16,45 @@ class ChainConfig {
 }
 
 class BlockchainService {
-  static const ChainConfig ethereumSepolia = ChainConfig(
+  static const ethereumSepolia =
+      ChainConfig(
     name: 'Ethereum Sepolia',
     symbol: 'ETH',
     chainId: 11155111,
-    rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
+    rpc:
+        'https://ethereum-sepolia-rpc.publicnode.com',
   );
 
-  static const ChainConfig bnbTestnet = ChainConfig(
+  static const bnbTestnet =
+      ChainConfig(
     name: 'BNB Smart Chain Testnet',
     symbol: 'tBNB',
     chainId: 97,
-    rpc: 'https://bsc-testnet-rpc.publicnode.com',
+    rpc:
+        'https://bsc-testnet-rpc.publicnode.com',
   );
 
-  static const ChainConfig polygonAmoy = ChainConfig(
+  static const polygonAmoy =
+      ChainConfig(
     name: 'Polygon Amoy',
     symbol: 'POL',
     chainId: 80002,
-    rpc: 'https://rpc-amoy.polygon.technology',
+    rpc:
+        'https://rpc-amoy.polygon.technology',
   );
 
-  static const ChainConfig baseSepolia = ChainConfig(
+  static const baseSepolia =
+      ChainConfig(
     name: 'Base Sepolia',
     symbol: 'ETH',
     chainId: 84532,
-    rpc: 'https://sepolia.base.org',
+    rpc:
+        'https://sepolia.base.org',
   );
 
-  Web3Client clientFor(ChainConfig chain) {
+  Web3Client _client(
+    ChainConfig chain,
+  ) {
     return Web3Client(
       chain.rpc,
       http.Client(),
@@ -55,14 +65,17 @@ class BlockchainService {
     required ChainConfig chain,
     required String address,
   }) async {
-    final client = clientFor(chain);
+    final client = _client(chain);
 
     try {
-      final ethereumAddress = EthereumAddress.fromHex(address);
+      final ethereumAddress =
+          EthereumAddress.fromHex(address);
 
-      return await client.getBalance(ethereumAddress);
+      return await client.getBalance(
+        ethereumAddress,
+      );
     } finally {
-      await client.dispose();
+      client.dispose();
     }
   }
 
@@ -72,27 +85,29 @@ class BlockchainService {
     required String to,
     required BigInt amountWei,
   }) async {
-    final client = clientFor(chain);
+    final client = _client(chain);
 
     try {
-      final credentials = EthPrivateKey.fromHex(privateKey);
+      final credentials =
+          EthPrivateKey.fromHex(privateKey);
 
-      final recipient = EthereumAddress.fromHex(to);
+      final recipient =
+          EthereumAddress.fromHex(to);
 
       final transaction = Transaction(
         to: recipient,
-        value: EtherAmount.inWei(amountWei),
+        value: EtherAmount.inWei(
+          amountWei,
+        ),
       );
 
-      final hash = await client.sendTransaction(
+      return await client.sendTransaction(
         credentials,
         transaction,
         chainId: chain.chainId,
       );
-
-      return hash;
     } finally {
-      await client.dispose();
+      client.dispose();
     }
   }
 }
