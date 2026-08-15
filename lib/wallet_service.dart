@@ -1,22 +1,21 @@
 import 'dart:convert';
+import 'dart:math';
 
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:wallet/wallet.dart' as hd;
 import 'package:web3dart/web3dart.dart';
 
 class WalletInfo {
   final String id;
   final String name;
   final String address;
-  final String mnemonic;
+  final String privateKey;
   final bool testnet;
 
   const WalletInfo({
     required this.id,
     required this.name,
     required this.address,
-    required this.mnemonic,
+    required this.privateKey,
     required this.testnet,
   });
 
@@ -30,15 +29,15 @@ class WalletInfo {
   }
 
   factory WalletInfo.fromJson(
-    Map<String, dynamic> json,
-    String mnemonic,
-  ) {
+    Map<String, dynamic> json, {
+    required String privateKey,
+  }) {
     return WalletInfo(
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String,
-      mnemonic: mnemonic,
-      testnet: json['testnet'] as bool,
+      privateKey: privateKey,
+      testnet: json['testnet'] as bool? ?? true,
     );
   }
 }
@@ -46,8 +45,8 @@ class WalletInfo {
 class WalletService {
   static const String _walletsKey = 'melona_wallets';
 
-  final FlutterSecureStorage _storage =
-      const FlutterSecureStorage();
+  static const FlutterSecureStorage _storage =
+      FlutterSecureStorage();
 
   Future<List<WalletInfo>> getWallets() async {
     final raw = await _storage.read(
@@ -58,131 +57,93 @@ class WalletService {
       return [];
     }
 
-    final list = jsonDecode(raw) as List;
+    final decoded = jsonDecode(raw);
 
-    final wallets = <WalletInfo>[];
+    if (decoded is! List) {
+      return [];
+    }
 
-    for (final item in list) {
-      final map = Map<String, dynamic>.from(
-        item as Map,
-      );
+    final result = <WalletInfo>[];
 
-      final id = map['id'] as String;
-
-      final mnemonic = await _storage.read(
-        key: 'wallet_${id}_mnemonic',
-      );
-
-      if (mnemonic == null) {
+    for (final item in decoded) {
+      if (item is! Map) {
         continue;
       }
 
-      wallets.add(
+      final map = Map<String, dynamic>.from(item);
+
+      final id = map['id']?.toString();
+
+      if (id == null || id.isEmpty) {
+        continue;
+      }
+
+      final privateKey =
+          await _storage.read(
+        key: 'wallet_${id}_private_key',
+      );
+
+      if (privateKey == null ||
+          privateKey.isEmpty) {
+        continue;
+      }
+
+      result.add(
         WalletInfo.fromJson(
           map,
-          mnemonic,
+          privateKey: privateKey,
         ),
       );
     }
 
-    return wallets;
-  }
-
-  Future<void> _saveWallets(
-    List<WalletInfo> wallets,
-  ) async {
-    final data = wallets
-        .map(
-          (wallet) => wallet.toJson(),
-        )
-        .toList();
-
-    await _storage.write(
-      key: _walletsKey,
-      value: jsonEncode(data),
-    );
+    return result;
   }
 
   Future<WalletInfo> createWallet({
     required String name,
     required bool testnet,
   }) async {
-    final mnemonic = bip39.generateMnemonic(
-      strength: 256,
+    /*
+     * web3dart خودش قابلیت ساخت private key
+     * و Credential را دارد.
+     *
+     * برای این مرحله از HD/BIP44 خارجی استفاده
+     * نمی‌کنیم تا dependency conflict نداشته باشیم.
+     */
+
+    final random = Random.secure();
+
+    final bytes = List<int>.generate(
+      32,
+      (_) => random.nextInt(256),
     );
 
-    return _createFromMnemonic(
-      name: name,
-      mnemonic: mnemonic,
-      testnet: testnet,
-    );
-  }
-
-  Future<WalletInfo> importWallet({
-    required String name,
-    required String mnemonic,
-    required bool testnet,
-  }) async {
-    final normalized = mnemonic
-        .trim()
-        .replaceAll(RegExp(r'\s+'), ' ');
-
-    if (!bip39.validateMnemonic(normalized)) {
-      throw Exception(
-        'Invalid recovery phrase',
-      );
-    }
-
-    return _createFromMnemonic(
-      name: name,
-      mnemonic: normalized,
-      testnet: testnet,
-    );
-  }
-
-  Future<WalletInfo> _createFromMnemonic({
-    required String name,
-    required String mnemonic,
-    required bool testnet,
-  }) async {
-    final seed = hd.mnemonicToSeed(
-      mnemonic,
-    );
-
-    final master = hd.ExtendedPrivateKey.master(
-      seed,
-      hd.xprv,
-    );
-
-    final root = master.forPath(
-      "m/44'/60'/0'/0/0",
-    );
-
-    final extended = root as hd.ExtendedPrivateKey;
-
-    final privateKey = hd.PrivateKey(
-      extended.key,
-    );
-
-    final privateKeyHex =
-        _bytesToHex(privateKey.bytes);
+    final privateKey = bytes
+        .map(
+          (e) => e
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
 
     final credentials =
         EthPrivateKey.fromHex(
-      privateKeyHex,
+      privateKey,
     );
 
     final address =
         credentials.address.eip55With0x;
 
     final id =
-        DateTime.now().microsecondsSinceEpoch.toString();
+        DateTime.now()
+            .microsecondsSinceEpoch
+            .toString();
 
     final wallet = WalletInfo(
       id: id,
       name: name,
       address: address,
-      mnemonic: mnemonic,
+      privateKey: privateKey,
       testnet: testnet,
     );
 
@@ -193,41 +154,31 @@ class WalletService {
     await _saveWallets(wallets);
 
     await _storage.write(
-      key: 'wallet_${id}_mnemonic',
-      value: mnemonic,
-    );
-
-    await _storage.write(
       key: 'wallet_${id}_private_key',
-      value: privateKeyHex,
+      value: privateKey,
     );
 
     return wallet;
   }
 
-  String _bytesToHex(List<int> bytes) {
-    return bytes
-        .map(
-          (byte) => byte
-              .toRadixString(16)
-              .padLeft(2, '0'),
-        )
-        .join();
+  Future<void> _saveWallets(
+    List<WalletInfo> wallets,
+  ) async {
+    final data = wallets
+        .map((wallet) => wallet.toJson())
+        .toList();
+
+    await _storage.write(
+      key: _walletsKey,
+      value: jsonEncode(data),
+    );
   }
 
   Future<String?> getPrivateKey(
     String walletId,
-  ) async {
+  ) {
     return _storage.read(
       key: 'wallet_${walletId}_private_key',
-    );
-  }
-
-  Future<String?> getMnemonic(
-    String walletId,
-  ) async {
-    return _storage.read(
-      key: 'wallet_${walletId}_mnemonic',
     );
   }
 
@@ -241,10 +192,6 @@ class WalletService {
     );
 
     await _saveWallets(wallets);
-
-    await _storage.delete(
-      key: 'wallet_${walletId}_mnemonic',
-    );
 
     await _storage.delete(
       key: 'wallet_${walletId}_private_key',
