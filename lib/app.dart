@@ -22,7 +22,8 @@ class MelonaWalletApp extends StatelessWidget {
           seedColor: melonaGreen,
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF080C0A),
+        scaffoldBackgroundColor:
+            const Color(0xFF080C0A),
       ),
       home: const HomePage(),
     );
@@ -33,11 +34,14 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() =>
+      _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final WalletService walletService = WalletService();
+  final WalletService walletService =
+      WalletService();
+
   final BlockchainService blockchainService =
       BlockchainService();
 
@@ -75,17 +79,21 @@ class _HomePageState extends State<HomePage> {
 
         if (selectedWallet == null ||
             !result.any(
-              (w) => w.id == selectedWallet!.id,
+              (wallet) =>
+                  wallet.id ==
+                  selectedWallet!.id,
             )) {
           selectedWallet =
-              result.isEmpty ? null : result.first;
+              result.isEmpty
+                  ? null
+                  : result.first;
         }
 
         loading = false;
       });
 
       await refreshBalance();
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       setState(() {
@@ -116,13 +124,15 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final wei =
-          await blockchainService.getNativeBalance(
+          await blockchainService
+              .getNativeBalance(
         chain: selectedChain,
         address: wallet.address,
       );
 
       final formatted =
-          blockchainService.weiToEther(wei);
+          blockchainService
+              .weiToEther(wei);
 
       if (!mounted) return;
 
@@ -172,25 +182,31 @@ class _HomePageState extends State<HomePage> {
                 'ساخت کیف پول جدید',
               ),
               content: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                    MainAxisSize.min,
                 children: [
                   TextField(
-                    controller: nameController,
+                    controller:
+                        nameController,
                     textDirection:
                         TextDirection.rtl,
                     decoration:
                         const InputDecoration(
-                      labelText: 'نام کیف پول',
+                      labelText:
+                          'نام کیف پول',
                       hintText:
                           'مثلاً کیف پول اصلی',
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(
+                    height: 18,
+                  ),
                   SwitchListTile(
                     contentPadding:
                         EdgeInsets.zero,
                     value: testnet,
-                    onChanged: (value) {
+                    onChanged:
+                        (value) {
                       setDialogState(() {
                         testnet = value;
                       });
@@ -221,7 +237,8 @@ class _HomePageState extends State<HomePage> {
                 FilledButton(
                   onPressed: () async {
                     final name =
-                        nameController.text.trim();
+                        nameController.text
+                            .trim();
 
                     if (name.isEmpty) {
                       return;
@@ -234,7 +251,8 @@ class _HomePageState extends State<HomePage> {
                         testnet: testnet,
                       );
 
-                      if (!dialogContext.mounted) {
+                      if (!dialogContext
+                          .mounted) {
                         return;
                       }
 
@@ -243,7 +261,8 @@ class _HomePageState extends State<HomePage> {
                         true,
                       );
                     } catch (_) {
-                      if (!dialogContext.mounted) {
+                      if (!dialogContext
+                          .mounted) {
                         return;
                       }
 
@@ -273,6 +292,7 @@ class _HomePageState extends State<HomePage> {
 
     if (result == true) {
       await loadWallets();
+
       showMessage(
         'کیف پول با موفقیت ساخته شد',
       );
@@ -296,17 +316,22 @@ class _HomePageState extends State<HomePage> {
           title: const Text(
             'دریافت',
           ),
-          content: SingleChildScrollView(
+          content:
+              SingleChildScrollView(
             child: Column(
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.all(14),
+                      const EdgeInsets.all(
+                    14,
+                  ),
                   decoration:
                       BoxDecoration(
                     color: Colors.white,
                     borderRadius:
-                        BorderRadius.circular(18),
+                        BorderRadius.circular(
+                      18,
+                    ),
                   ),
                   child: QrImageView(
                     data: wallet.address,
@@ -315,18 +340,23 @@ class _HomePageState extends State<HomePage> {
                         Colors.white,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
                 const Text(
                   'این آدرس را برای دریافت دارایی در شبکه انتخاب‌شده استفاده کنید.',
                   textAlign:
                       TextAlign.center,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(
+                  height: 14,
+                ),
                 SelectableText(
                   wallet.address,
                   textAlign:
                       TextAlign.center,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     fontSize: 13,
                   ),
                 ),
@@ -372,7 +402,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> send() async {
     showMessage(
-      'بخش ارسال را بعد از تست موجودی فعال می‌کنیم.',
+      'بخش ارسال در مرحله بعد فعال می‌شود.',
     );
   }
 
@@ -432,7 +462,8 @@ class _HomePageState extends State<HomePage> {
       wallet.id,
     );
 
-    if (selectedWallet?.id == wallet.id) {
+    if (selectedWallet?.id ==
+        wallet.id) {
       selectedWallet = null;
     }
 
@@ -458,113 +489,168 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     if (loading) {
       return const Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection:
+            TextDirection.rtl,
         child: Scaffold(
           body: Center(
-            child: CircularProgressIndicator(),
+            child:
+                CircularProgressIndicator(),
           ),
         ),
       );
     }
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection:
+          TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
             'Melona Wallet',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight:
+                  FontWeight.w900,
             ),
           ),
           actions: [
             IconButton(
-              tooltip: 'ساخت کیف پول',
-              onPressed: createWallet,
+              tooltip:
+                  'ساخت کیف پول',
+              onPressed:
+                  createWallet,
               icon: const Icon(
-                Icons.add_circle_outline,
+                Icons
+                    .add_circle_outline,
               ),
             ),
           ],
         ),
-        body: RefreshIndicator(
-          onRefresh: loadWallets,
+        body:
+            RefreshIndicator(
+          onRefresh:
+              loadWallets,
           child: ListView(
             physics:
                 const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(18),
+            padding:
+                const EdgeInsets.all(
+              18,
+            ),
             children: [
-              if (selectedWallet == null)
+              if (selectedWallet ==
+                  null)
                 _EmptyWallet(
-                  onCreate: createWallet,
+                  onCreate:
+                      createWallet,
                 )
               else ...[
                 _WalletCard(
-                  wallet: selectedWallet!,
-                  balance: balance,
-                  chain: selectedChain,
-                  loading: loadingBalance,
+                  wallet:
+                      selectedWallet!,
+                  balance:
+                      balance,
+                  chain:
+                      selectedChain,
+                  loading:
+                      loadingBalance,
                 ),
-                const SizedBox(height: 16),
+
+                const SizedBox(
+                  height: 16,
+                ),
+
                 _ChainSelector(
-                  selected: selectedChain,
-                  onChanged: selectChain,
+                  selected:
+                      selectedChain,
+                  onChanged:
+                      selectChain,
                 ),
-                const SizedBox(height: 16),
+
+                const SizedBox(
+                  height: 16,
+                ),
+
                 Row(
                   children: [
                     Expanded(
-                      child: _ActionButton(
+                      child:
+                          _ActionButton(
                         icon: Icons
                             .arrow_upward_rounded,
-                        title: 'ارسال',
-                        onTap: send,
+                        title:
+                            'ارسال',
+                        onTap:
+                            send,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(
+                      width: 10,
+                    ),
                     Expanded(
-                      child: _ActionButton(
+                      child:
+                          _ActionButton(
                         icon: Icons
                             .arrow_downward_rounded,
-                        title: 'دریافت',
-                        onTap: receive,
+                        title:
+                            'دریافت',
+                        onTap:
+                            receive,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(
+                      width: 10,
+                    ),
                     Expanded(
-                      child: _ActionButton(
+                      child:
+                          _ActionButton(
                         icon: Icons
                             .swap_vert_rounded,
-                        title: 'Swap',
-                        onTap: swap,
+                        title:
+                            'Swap',
+                        onTap:
+                            swap,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+
+                const SizedBox(
+                  height: 28,
+                ),
+
                 const Text(
                   'کیف پول‌های من',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w900,
+                    fontWeight:
+                        FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 10),
+
+                const SizedBox(
+                  height: 10,
+                ),
+
                 ...wallets.map(
-                  (wallet) => _WalletListItem(
+                  (wallet) =>
+                      _WalletListItem(
                     wallet: wallet,
                     selected:
-                        selectedWallet?.id ==
+                        selectedWallet
+                                ?.id ==
                             wallet.id,
                     onTap: () async {
                       setState(() {
-                        selectedWallet = wallet;
+                        selectedWallet =
+                            wallet;
                       });
 
                       await refreshBalance();
                     },
                     onDelete: () {
-                      deleteWallet(wallet);
+                      deleteWallet(
+                        wallet,
+                      );
                     },
                   ),
                 ),
@@ -577,7 +663,8 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _WalletCard extends StatelessWidget {
+class _WalletCard
+    extends StatelessWidget {
   final WalletInfo wallet;
   final String balance;
   final ChainConfig chain;
@@ -591,15 +678,26 @@ class _WalletCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      padding:
+          const EdgeInsets.all(
+        24,
+      ),
+      decoration:
+          BoxDecoration(
         borderRadius:
-            BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+            BorderRadius.circular(
+          28,
+        ),
+        gradient:
+            const LinearGradient(
+          begin:
+              Alignment.topRight,
+          end:
+              Alignment.bottomLeft,
           colors: [
             Color(0xFF294B30),
             Color(0xFF101710),
@@ -622,14 +720,18 @@ class _WalletCard extends StatelessWidget {
                 child: Icon(
                   Icons
                       .account_balance_wallet_rounded,
-                  color: Colors.black,
+                  color:
+                      Colors.black,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(
+                width: 12,
+              ),
               Expanded(
                 child: Text(
                   wallet.name,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     fontSize: 20,
                     fontWeight:
                         FontWeight.w900,
@@ -638,27 +740,37 @@ class _WalletCard extends StatelessWidget {
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(
+                    const EdgeInsets
+                        .symmetric(
                   horizontal: 10,
                   vertical: 6,
                 ),
-                decoration: BoxDecoration(
+                decoration:
+                    BoxDecoration(
                   color: wallet.testnet
                       ? melonaGreen
-                          .withOpacity(.15)
+                          .withValues(
+                          alpha: .15,
+                        )
                       : Colors.orange
-                          .withOpacity(.15),
+                          .withValues(
+                          alpha: .15,
+                        ),
                   borderRadius:
-                      BorderRadius.circular(10),
+                      BorderRadius.circular(
+                    10,
+                  ),
                 ),
                 child: Text(
                   wallet.testnet
                       ? 'TESTNET'
                       : 'MAINNET',
-                  style: TextStyle(
-                    color: wallet.testnet
-                        ? melonaGreen
-                        : Colors.orange,
+                  style:
+                      TextStyle(
+                    color:
+                        wallet.testnet
+                            ? melonaGreen
+                            : Colors.orange,
                     fontWeight:
                         FontWeight.w900,
                     fontSize: 11,
@@ -667,15 +779,21 @@ class _WalletCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(
+            height: 28,
+          ),
           Text(
             chain.name,
-            style: const TextStyle(
-              color: Colors.white60,
+            style:
+                const TextStyle(
+              color:
+                  Colors.white60,
               fontSize: 13,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(
+            height: 7,
+          ),
           Row(
             crossAxisAlignment:
                 CrossAxisAlignment.end,
@@ -694,7 +812,8 @@ class _WalletCard extends StatelessWidget {
                             height: 22,
                             child:
                                 CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth:
+                                  2,
                             ),
                           ),
                         ),
@@ -714,20 +833,30 @@ class _WalletCard extends StatelessWidget {
                 style:
                     const TextStyle(
                   fontSize: 16,
-                  color: Colors.white60,
+                  color:
+                      Colors.white60,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(
+            height: 20,
+          ),
           Container(
             padding:
-                const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+                const EdgeInsets.all(
+              12,
+            ),
+            decoration:
+                BoxDecoration(
               color:
-                  Colors.black.withOpacity(.2),
+                  Colors.black.withValues(
+                alpha: .2,
+              ),
               borderRadius:
-                  BorderRadius.circular(14),
+                  BorderRadius.circular(
+                14,
+              ),
             ),
             child: Row(
               children: [
@@ -736,7 +865,8 @@ class _WalletCard extends StatelessWidget {
                     wallet.address,
                     maxLines: 1,
                     overflow:
-                        TextOverflow.ellipsis,
+                        TextOverflow
+                            .ellipsis,
                     style:
                         const TextStyle(
                       fontSize: 12,
@@ -747,19 +877,25 @@ class _WalletCard extends StatelessWidget {
                 ),
                 IconButton(
                   visualDensity:
-                      VisualDensity.compact,
-                  onPressed: () async {
-                    await Clipboard.setData(
+                      VisualDensity
+                          .compact,
+                  onPressed:
+                      () async {
+                    await Clipboard
+                        .setData(
                       ClipboardData(
-                        text: wallet.address,
+                        text:
+                            wallet.address,
                       ),
                     );
 
-                    if (!context.mounted) {
+                    if (!context
+                        .mounted) {
                       return;
                     }
 
-                    ScaffoldMessenger.of(
+                    ScaffoldMessenger
+                        .of(
                       context,
                     ).showSnackBar(
                       const SnackBar(
@@ -770,7 +906,8 @@ class _WalletCard extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon:
+                      const Icon(
                     Icons.copy_rounded,
                     size: 18,
                   ),
@@ -784,7 +921,8 @@ class _WalletCard extends StatelessWidget {
   }
 }
 
-class _ChainSelector extends StatelessWidget {
+class _ChainSelector
+    extends StatelessWidget {
   final ChainConfig selected;
   final ValueChanged<ChainConfig>
       onChanged;
@@ -795,9 +933,12 @@ class _ChainSelector extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     const chains = [
-      BlockchainService.ethereumSepolia,
+      BlockchainService
+          .ethereumSepolia,
       BlockchainService.bnbTestnet,
       BlockchainService.polygonAmoy,
       BlockchainService.baseSepolia,
@@ -807,14 +948,16 @@ class _ChainSelector extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Padding(
         padding:
-            const EdgeInsets.symmetric(
+            const EdgeInsets
+                .symmetric(
           horizontal: 16,
           vertical: 4,
         ),
         child:
             DropdownButtonHideUnderline(
           child:
-              DropdownButton<ChainConfig>(
+              DropdownButton<
+                  ChainConfig>(
             value: selected,
             isExpanded: true,
             items: chains.map(
@@ -842,9 +985,12 @@ class _ChainSelector extends StatelessWidget {
                 );
               },
             ).toList(),
-            onChanged: (chain) {
+            onChanged:
+                (chain) {
               if (chain != null) {
-                onChanged(chain);
+                onChanged(
+                  chain,
+                );
               }
             },
           ),
@@ -867,31 +1013,43 @@ class _ActionButton
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Material(
-      color: const Color(0xFF141A16),
+      color:
+          const Color(0xFF141A16),
       borderRadius:
-          BorderRadius.circular(18),
+          BorderRadius.circular(
+        18,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius:
-            BorderRadius.circular(18),
+            BorderRadius.circular(
+          18,
+        ),
         child: Padding(
           padding:
-              const EdgeInsets.symmetric(
+              const EdgeInsets
+                  .symmetric(
             vertical: 18,
           ),
           child: Column(
             children: [
               Icon(
                 icon,
-                color: melonaGreen,
+                color:
+                    melonaGreen,
                 size: 25,
               ),
-              const SizedBox(height: 7),
+              const SizedBox(
+                height: 7,
+              ),
               Text(
                 title,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   fontWeight:
                       FontWeight.w800,
                 ),
@@ -919,16 +1077,23 @@ class _WalletListItem
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Card(
       margin:
-          const EdgeInsets.only(bottom: 8),
+          const EdgeInsets.only(
+        bottom: 8,
+      ),
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: selected
-              ? melonaGreen
-              : const Color(0xFF26332A),
+          backgroundColor:
+              selected
+                  ? melonaGreen
+                  : const Color(
+                      0xFF26332A,
+                    ),
           child: Icon(
             Icons
                 .account_balance_wallet_rounded,
@@ -943,7 +1108,8 @@ class _WalletListItem
               child: Text(
                 wallet.name,
                 overflow:
-                    TextOverflow.ellipsis,
+                    TextOverflow
+                        .ellipsis,
                 style:
                     const TextStyle(
                   fontWeight:
@@ -951,7 +1117,9 @@ class _WalletListItem
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(
+              width: 8,
+            ),
             Text(
               wallet.testnet
                   ? 'TEST'
@@ -976,13 +1144,16 @@ class _WalletListItem
         ),
         trailing:
             PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'delete') {
+          onSelected:
+              (value) {
+            if (value ==
+                'delete') {
               onDelete();
             }
           },
           itemBuilder:
-              (context) => const [
+              (context) =>
+                  const [
             PopupMenuItem(
               value: 'delete',
               child: Text(
@@ -1005,14 +1176,22 @@ class _EmptyWallet
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
       padding:
-          const EdgeInsets.all(30),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141A16),
+          const EdgeInsets.all(
+        30,
+      ),
+      decoration:
+          BoxDecoration(
+        color:
+            const Color(0xFF141A16),
         borderRadius:
-            BorderRadius.circular(28),
+            BorderRadius.circular(
+          28,
+        ),
         border: Border.all(
           color: Colors.white10,
         ),
@@ -1023,35 +1202,52 @@ class _EmptyWallet
             Icons
                 .account_balance_wallet_rounded,
             size: 70,
-            color: melonaGreen,
+            color:
+                melonaGreen,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(
+            height: 18,
+          ),
           const Text(
             'به Melona Wallet خوش آمدید',
-            textAlign: TextAlign.center,
-            style: TextStyle(
+            textAlign:
+                TextAlign.center,
+            style:
+                TextStyle(
               fontSize: 23,
               fontWeight:
                   FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(
+            height: 10,
+          ),
           const Text(
             'برای شروع یک کیف پول جدید بسازید.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white60,
+            textAlign:
+                TextAlign.center,
+            style:
+                TextStyle(
+              color:
+                  Colors.white60,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(
+            height: 24,
+          ),
           SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(
+            width:
+                double.infinity,
+            child:
+                FilledButton.icon(
+              onPressed:
+                  onCreate,
+              icon:
+                  const Icon(
                 Icons.add_rounded,
               ),
-              label: const Text(
+              label:
+                  const Text(
                 'ساخت کیف پول جدید',
               ),
             ),
